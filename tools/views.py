@@ -8,7 +8,9 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 
 #Asssign your API key below
-apiKey = "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"
+#Get it from here:
+#https://platform.openai.com/api-keys
+apiKey = "openai_api_key"
 
 
 def chat(request):
