@@ -44,7 +44,6 @@ def generate_response(request):
         content = response_json['choices'][0]['message']['content']
 
         # Print the 'content'
-        print(content)
         assistant_response = content
 
         
