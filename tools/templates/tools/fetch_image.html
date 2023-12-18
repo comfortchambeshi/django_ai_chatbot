@@ -1,0 +1,135 @@
+{% extends 'header.html' %}
+{% block header %}
+{% load humanize %}
+{% load user_agents %}
+
+{% load static %}
+
+{% block og_tags %}
+<title>ZIVSTER AI IMAGE GENERATOR {{item.name}} | {{site_name}} </title>
+<style>
+  
+    .container_main {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-title {
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    .image-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .image-item {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+    }
+    .image-item img {
+        max-width: 100%;
+        height: auto;
+    }
+    .spinner-container {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        height: 150px;
+    }
+    .loading-text {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 18px;
+    }
+</style>
+
+{% endblock %}
+    
+<section style="margin-top:100px;" >
+    <div class="container_main mt-5">
+        <h1 class="form-title">ZIVSTER AI IMAGE GENERATOR</h1>
+        <form id="fetch-form" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <input placeholder="Enter image you would like to generate" type="text" class="form-control" id="prompt" name="prompt" required>
+               <p>
+                <small><i>Eg: A cinematic goat with glasses</i></small>
+               </p>
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary" id="fetch-button">Generate Images</button>
+            </div>
+            <div  class="spinner-container text-center" id="spinner-container">
+                <br>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Please wait...</span>
+                </div>
+                <p class="loading-text">Analysing and generating...</p>
+            </div>
+        </form>
+        <div class="mt-4" id="result-container">
+            <div class="image-grid">
+                <!-- Images will be displayed here -->
+            </div>
+        </div>
+    </div>
+    <!-- Include Bootstrap JS and jQuery here -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#fetch-form").on("submit", function (e) {
+                e.preventDefault();
+                // Disable the fetch button during the request
+                $("#fetch-button").prop("disabled", true);
+                // Show the loading spinner
+                $("#spinner-container").show();
+                $.ajax({
+                    type: "POST",
+                    url: "{% url 'tools:fetch_image' %}",
+                    data: $(this).serialize(),
+                    dataType: "json",
+                    success: function (data) {
+                        if ('images' in data) {
+                            // Display the fetched images in a grid
+                            var resultContainer = $("#result-container .image-grid");
+                            resultContainer.empty();
+                            $.each(data.images, function (index, url) {
+                                var imageItem = $('<div class="image-item"></div>');
+                                var image = $('<a href="' + url + '"><img src="' + url + '" class="img-fluid" alt="Generated Image"></a>');
+                                imageItem.append(image);
+                                resultContainer.append(imageItem);
+                            });
+                        } else if ('error_message' in data) {
+                            // Display an error message
+                            alert(data.error_message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle errors here
+                        alert("Error: " + xhr.responseText);
+                    },
+                    complete: function () {
+                        // Hide the loading spinner when the request is complete
+                        $("#spinner-container").hide();
+                        // Re-enable the fetch button
+                        $("#fetch-button").prop("disabled", false);
+                    }
+                });
+            });
+        });
+    </script>
+
+    <div style="margin-top:150px;">
+        <hr>
+    </div>
+</section>
+    {% include 'footer.html' %}
+    {% endblock  %}

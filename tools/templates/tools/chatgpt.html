@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WIT Chatbot: {{item.name}}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin-top: 50px;
+        }
+
+        .container-chat {
+            background-color: #f0f0f0; /* Updated background color */
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-width: 600px; /* Updated max-width */
+            margin-left: auto; /* Center the container */
+            margin-right: auto;
+        }
+
+        h1 {
+            color: #007bff;
+            text-align: center;
+        }
+
+        #chat {
+            max-height: 400px;
+            overflow-y: scroll;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #ffffff; /* Updated background color */
+        }
+
+        .chat-bubble {
+            max-width: 80%;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .user-bubble {
+            background-color: #007bff;
+            color: #fff;
+            float: right;
+        }
+
+        .assistant-bubble {
+            background-color: #4caf50;
+            color: #fff;
+            float: left;
+        }
+
+        .input-group {
+            margin-top: 20px;
+        }
+
+        #userInput, #sendMessage {
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #userInput {
+            width: 70%; /* Adjusted width */
+            margin-right: 10px;
+        }
+
+        #sendMessage {
+            width: 28%; /* Adjusted width */
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #007bff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-right: 10px;
+        }
+
+        .analysis-message {
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .user-bubble, .assistant-bubble {
+            margin-bottom: 15px;
+        }
+
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+
+<section>
+    <div class="container container-chat mt-5">
+        <h1>WIT AI Chatbot</h1>
+        <div id="chat">
+            <!-- Initial Conversation -->
+            <div class="assistant-bubble chat-bubble"><b>{{site_name}} WIT AI BOT:</b> Ask me anything, and I will assist you.</div>
+        </div>
+        <!-- Analysis message -->
+        <div class="analysis-message">Please wait...</div>
+        <div class="input-group mt-3">
+            <input type="text" id="userInput" class="form-control" placeholder="Type your message...">
+            <button id="sendMessage" class="btn btn-primary">Send</button>
+            <!-- Loading spinner -->
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Add Bootstrap and jQuery scripts here (you can include them from CDNs) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    // Function to toggle loading spinner and analysis message
+    function toggleLoadingSpinner(show) {
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        const analysisMessage = document.querySelector('.analysis-message');
+        if (show) {
+            loadingSpinner.style.display = 'inline-block';
+            analysisMessage.style.display = 'block';
+        } else {
+            loadingSpinner.style.display = 'none';
+            analysisMessage.style.display = 'none';
+        }
+    }
+
+    // Function to add a message to the chat
+    function addMessage(role, content) {
+        const chat = document.getElementById('chat');
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chat-bubble');
+        if (role === 'user') {
+            messageDiv.classList.add('user-bubble');
+            messageDiv.textContent = 'Me: ' + content;
+        } else {
+            messageDiv.classList.add('assistant-bubble');
+            messageDiv.textContent = 'WIT BOT: ' + content;
+        }
+        chat.appendChild(messageDiv);
+        // Add clearfix to ensure proper alignment
+        const clearfixDiv = document.createElement('div');
+        clearfixDiv.classList.add('clearfix');
+        chat.appendChild(clearfixDiv);
+        // Scroll to the bottom of the chat
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    // Function to send a message and get a response from the Django view
+    function sendMessage() {
+        const userInput = document.getElementById('userInput').value;
+
+        // Show the analysis message and loading spinner
+        toggleLoadingSpinner(true);
+
+        // Make an AJAX request to the Django view
+        $.ajax({
+            type: 'POST',
+            url: '{% url "tools:generate_response" %}', // Use Django URL template tag
+            data: {
+                'user_message': userInput,
+                csrfmiddlewaretoken: '{{ csrf_token }}'  // Add this for CSRF protection
+            },
+            success: function(response) {
+                // Use response directly to get the assistant's reply
+                addMessage('user', userInput); // Display user's message
+                addMessage('assistant', response.response); // Display assistant's reply
+                // Hide loading spinner
+                toggleLoadingSpinner(false);
+            },
+            error: function(error) {
+                // Hide loading spinner in case of an error
+                toggleLoadingSpinner(false);
+                console.error('Error:', error);
+            }
+        });
+
+        // Clear the user's input field
+        document.getElementById('userInput').value = '';
+    }
+
+    // Attach the sendMessage function to the button click event
+    document.getElementById('sendMessage').addEventListener('click', sendMessage);
+</script>
+
+</body>
+</html>
