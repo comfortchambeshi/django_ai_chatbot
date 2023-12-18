@@ -4,6 +4,7 @@ This is a simple Django AI chatbot application powered by GPT-3.5. You can custo
 ### REQUIREMENTS:
 - Python 3+
 - Django 3.2.7
+- pip install requests
 
 ### STEP 1: LOGIN/REGISTER OPENAI ACCOUNT
 https://platform.openai.com/login?launch
